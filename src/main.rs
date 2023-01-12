@@ -12,6 +12,10 @@ use tokio::sync::Mutex;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let quotes_service = QuotesServiceClient::connect("http://[::1]:50051").await?;
 
+    let cors = rocket_cors::CorsOptions::default()
+        .to_cors()
+        .expect("error while building CORS");
+
     let _ = rocket::build()
         .manage(schema::Context {
             quotes_service: Arc::new(Mutex::new(quotes_service)),
@@ -21,6 +25,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/",
             rocket::routes![graphiql, get_graphql_handler, post_graphql_handler],
         )
+        .mount("/", rocket_cors::catch_all_options_routes())
+        .attach(cors.clone())
+        .manage(cors)
         .launch()
         .await
         .expect("server to launch");
