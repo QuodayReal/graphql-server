@@ -1,6 +1,8 @@
 pub mod quotes;
 
-use crate::protos::quotes::{quotes_service_client::QuotesServiceClient, QuoteRequest};
+use crate::protos::quotes::{
+    quotes_service_client::QuotesServiceClient, FilterQuotesRequest, QuoteRequest,
+};
 use juniper::{graphql_object, FieldResult};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -19,11 +21,13 @@ pub struct Query;
 impl Query {
     pub async fn quotes(id: Option<String>, context: &Context) -> FieldResult<Vec<quotes::Quote>> {
         let mut client = context.quotes_service.lock().await;
-        let request = tonic::Request::new(QuoteRequest {
-            id: id.unwrap_or_else(|| "627e007bab1ab6462c21a5d6".to_string()),
-        });
+        let request = FilterQuotesRequest {
+            limit: 20,
+            ..Default::default()
+        };
+        let request = tonic::Request::new(request);
 
-        let response = client.get_quote(request).await;
+        let response = client.filter_quotes(request).await;
         match response {
             Ok(response) => {
                 let quotes = response.into_inner().quotes;
