@@ -1,7 +1,7 @@
 pub mod quotes;
 
 use crate::protos::quotes::{
-    quotes_service_client::QuotesServiceClient, FilterQuotesRequest, QuoteRequest,
+    quotes_service_client::QuotesServiceClient, LimitFilter, QuoteRequest, SearchQuotesRequest,
 };
 use juniper::{graphql_object, FieldResult};
 use std::sync::Arc;
@@ -19,15 +19,24 @@ pub struct Query;
 
 #[graphql_object(context = Context)]
 impl Query {
-    pub async fn quotes(id: Option<String>, context: &Context) -> FieldResult<Vec<quotes::Quote>> {
+    pub async fn quotes(
+        context: &Context,
+        limit: Option<i32>,
+        skip: Option<i32>,
+        random: Option<bool>,
+    ) -> FieldResult<Vec<quotes::Quote>> {
         let mut client = context.quotes_service.lock().await;
-        let request = FilterQuotesRequest {
-            limit: 20,
+        let request = SearchQuotesRequest {
+            limit: Some(LimitFilter {
+                limit: limit.unwrap_or(20),
+                skip: skip.unwrap_or(0),
+            }),
+            random,
             ..Default::default()
         };
         let request = tonic::Request::new(request);
 
-        let response = client.filter_quotes(request).await;
+        let response = client.search_quotes(request).await;
         match response {
             Ok(response) => {
                 let quotes = response.into_inner().quotes;

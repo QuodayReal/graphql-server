@@ -38,17 +38,25 @@ pub struct AuthorRequest {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct FilterQuotesRequest {
+pub struct LimitFilter {
+    #[prost(int32, tag = "1")]
+    pub skip: i32,
+    #[prost(int32, tag = "2")]
+    pub limit: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SearchQuotesRequest {
     #[prost(string, tag = "1")]
     pub author: ::prost::alloc::string::String,
     #[prost(string, tag = "2")]
     pub tag: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub text: ::prost::alloc::string::String,
-    #[prost(int32, tag = "4")]
-    pub limit: i32,
-    #[prost(string, tag = "5")]
-    pub after: ::prost::alloc::string::String,
+    #[prost(bool, optional, tag = "4")]
+    pub random: ::core::option::Option<bool>,
+    #[prost(message, optional, tag = "5")]
+    pub limit: ::core::option::Option<LimitFilter>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -131,9 +139,9 @@ pub mod quotes_service_client {
             self.inner = self.inner.accept_compressed(encoding);
             self
         }
-        pub async fn filter_quotes(
+        pub async fn search_quotes(
             &mut self,
-            request: impl tonic::IntoRequest<super::FilterQuotesRequest>,
+            request: impl tonic::IntoRequest<super::SearchQuotesRequest>,
         ) -> Result<tonic::Response<super::QuoteResponse>, tonic::Status> {
             self.inner
                 .ready()
@@ -146,7 +154,7 @@ pub mod quotes_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/quotes.QuotesService/FilterQuotes",
+                "/quotes.QuotesService/SearchQuotes",
             );
             self.inner.unary(request.into_request(), path, codec).await
         }
@@ -197,9 +205,9 @@ pub mod quotes_service_server {
     /// Generated trait containing gRPC methods that should be implemented for use with QuotesServiceServer.
     #[async_trait]
     pub trait QuotesService: Send + Sync + 'static {
-        async fn filter_quotes(
+        async fn search_quotes(
             &self,
-            request: tonic::Request<super::FilterQuotesRequest>,
+            request: tonic::Request<super::SearchQuotesRequest>,
         ) -> Result<tonic::Response<super::QuoteResponse>, tonic::Status>;
         async fn get_quote(
             &self,
@@ -269,13 +277,13 @@ pub mod quotes_service_server {
         fn call(&mut self, req: http::Request<B>) -> Self::Future {
             let inner = self.inner.clone();
             match req.uri().path() {
-                "/quotes.QuotesService/FilterQuotes" => {
+                "/quotes.QuotesService/SearchQuotes" => {
                     #[allow(non_camel_case_types)]
-                    struct FilterQuotesSvc<T: QuotesService>(pub Arc<T>);
+                    struct SearchQuotesSvc<T: QuotesService>(pub Arc<T>);
                     impl<
                         T: QuotesService,
-                    > tonic::server::UnaryService<super::FilterQuotesRequest>
-                    for FilterQuotesSvc<T> {
+                    > tonic::server::UnaryService<super::SearchQuotesRequest>
+                    for SearchQuotesSvc<T> {
                         type Response = super::QuoteResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
@@ -283,11 +291,11 @@ pub mod quotes_service_server {
                         >;
                         fn call(
                             &mut self,
-                            request: tonic::Request<super::FilterQuotesRequest>,
+                            request: tonic::Request<super::SearchQuotesRequest>,
                         ) -> Self::Future {
                             let inner = self.0.clone();
                             let fut = async move {
-                                (*inner).filter_quotes(request).await
+                                (*inner).search_quotes(request).await
                             };
                             Box::pin(fut)
                         }
@@ -297,7 +305,7 @@ pub mod quotes_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = FilterQuotesSvc(inner);
+                        let method = SearchQuotesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
