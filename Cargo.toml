@@ -15,7 +15,7 @@ tokio = { version = "1.0", features = ["macros", "rt-multi-thread"] }
 dotenv = "0.15.0"
 serde = "1.0.152"
 serde_json = "1.0.91"
-futures = "0.3.25"
+futures = "0.3.26"
 rocket = { version = "0.5.0-rc.2", features = ["json"] }
 rocket_cors = { git = "https://github.com/lawliet89/rocket_cors", rev = "54fae07" }
 
